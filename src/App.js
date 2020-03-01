@@ -3,12 +3,8 @@ import { makeStyles } from '@material-ui/core/styles';
 // import gpmfExtract from 'gpmf-extract';
 // import goproTelemetry from 'gopro-telemetry';
 
-import Renderer from 'GoProTelemetryExtract/src/helpers/renderer';
 import TelemetryData from 'GoProTelemetryExtract/src/helpers/telemetryData';
-
-const bunnyVideo = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
-const skiVideo = 'https://www.dropbox.com/s/2dmjyea4f7pzk6t/GOPR4011.MP4?dl=1';
-
+import Player from "./components/player";
 
 const useStyles = makeStyles({
   root: {
@@ -55,20 +51,20 @@ const useStyles = makeStyles({
 function App() {
   const classes = useStyles();
 
-  const [file, setFile] = useState();
   const [video, setVideo] = useState();
   const [telemetry, setTelemetry] = useState();
-  const [renderer, setRenderer] = useState();
 
-  const videoRef = React.createRef();
-  const canvasRef = React.createRef();
 
   const onFile = e => {
     const files = e.target.files;
     for (let ix in files) {
       const file = files[ix];
       if (file.type && file.type.startsWith("video/")) {
-        setFile(file);
+        if (video) {
+          URL.revokeObjectURL(video);
+        }
+        const url = URL.createObjectURL(file);
+        setVideo(url);
       } else if (file.type && file.type.endsWith("/json")) {
         const reader = new FileReader();
         reader.onload = () => {
@@ -77,22 +73,9 @@ function App() {
           setTelemetry(telemetry);
         };
         reader.readAsText(file);
-
       }
     }
   };
-
-  useEffect(() => {
-    if (video) {
-      URL.revokeObjectURL(video);
-    }
-
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setVideo(url);
-    }
-  }, [file]);
-
 
   // useEffect(() => {
   //   const calculateTelemetry = async file => {
@@ -109,31 +92,6 @@ function App() {
   //   });
   // }, [file]);
 
-  useEffect(() => {
-    if (telemetry && !renderer) {
-      const newRenderer = new Renderer(canvasRef.current, telemetry, 25);
-      newRenderer.on("frame", (e, maxFrame) => {
-        console.log("RENDERER", e, maxFrame);
-      });
-      // newRenderer.ctx.scale(canvasRef.current.width/1920, canvasRef.current.height/1440);
-      setRenderer(newRenderer);
-    }
-  }, [canvasRef, telemetry, renderer]);
-
-  useEffect(() => {
-    if (!renderer | !videoRef) {
-      return;
-    }
-    const timer  = setInterval(() => {
-      const time = videoRef.current.currentTime;
-      renderer.render(Math.ceil(time*25));
-    }, 1000/25);
-
-    return () => {
-      clearTimeout(timer);
-    };
-
-  }, [renderer, videoRef]);
 
   return (
     <div className={classes.root}>
@@ -141,8 +99,7 @@ function App() {
           <input type="file" onChange={onFile} multiple={true}></input>
           { video && telemetry &&
               <div className={classes.player}>
-                <video ref={videoRef} src={video} autoPlay={true}></video>
-                <canvas ref={canvasRef}></canvas>
+                <Player video={video} telemetry={telemetry}/>
               </div>
           }
         </header>
