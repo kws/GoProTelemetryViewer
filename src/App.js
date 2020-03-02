@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-// import gpmfExtract from 'gpmf-extract';
-// import goproTelemetry from 'gopro-telemetry';
 
 import TelemetryData from 'GoProTelemetryExtract/src/helpers/telemetryData';
 import Player from "./components/player";
+import extract from "./telemetry/extract";
 
 const useStyles = makeStyles({
   root: {
@@ -65,6 +64,7 @@ function App() {
         }
         const url = URL.createObjectURL(file);
         setVideo(url);
+        extract(file);
       } else if (file.type && file.type.endsWith("/json")) {
         const reader = new FileReader();
         reader.onload = () => {
@@ -76,21 +76,6 @@ function App() {
       }
     }
   };
-
-  // useEffect(() => {
-  //   const calculateTelemetry = async file => {
-  //     const videoData = await gpmfExtract(file, true, e => {
-  //       console.log("extract update", e);
-  //     });
-  //     console.log("Received videoData", videoData);
-  //     const telemetry = await goproTelemetry(videoData, {'promisify': true});
-  //     console.log("Received telemetry", telemetry);
-  //     setTelemetry(telemetry);
-  //   };
-  //   calculateTelemetry(file).catch(err => {
-  //     console.log("Error while calculating telemetry", err);
-  //   });
-  // }, [file]);
 
 
   return (
